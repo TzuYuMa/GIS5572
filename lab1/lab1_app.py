@@ -9,7 +9,7 @@ app = Flask(__name__) # setup initial flask app; gets called throughout in route
 pgSQL_connect = {
     'dbname':"gis5572",
     'user':"postgres",
-    'password':"",
+    'password':"19950920840920Yu",
     'host':"34.133.74.255"
 }
 
@@ -23,42 +23,18 @@ def hello():
   return "GIS 5572 Lab 1"
 
 # Route to retrieve polygon as GeoJSON
-@app.route('/getgeojson', methods=['GET'])
+@app.route('/geojson', methods=['POST', 'GET'])
 def get_geojson():
-    try:
-        # Connect to the database
-        connection = psycopg2.connect(**pgSQL_connect)
-        cursor = connection.cursor()
-
-        # Query to retrieve polygon as GeoJSON
-        query = "SELECT ST_AsGeoJSON(geom) FROM polygon_lab1;"
-        cursor.execute(query)
-        rows = cursor.fetchall()
-
-        # Close database connection
-        cursor.close()
-        connection.close()
-
-        # Prepare GeoJSON response
-        features = []
-        for row in rows:
-            feature = {
-                "type": "Feature",
-                "geometry": json.loads(row[0]),
-                "properties": {}
-            }
-            features.append(feature)
-
-        feature_collection = {
-            "type": "FeatureCollection",
-            "features": features
-        }
-
-        # Return GeoJSON response
-        return jsonify(feature_collection)
-
-    except psycopg2.Error as e:
-        return jsonify({"error": "Database error: " + str(e)}), 500
+    # Execute a query to retrieve the polygon from the database
+    cursor = conn.cursor()
+    cursor.execute("SELECT ST_AsGeoJSON(polygon_lab1.*) FROM polygon_lab1;")
+    result = cursor.fetchall()
+    return result[0][0]
+    
+    if result is None:
+        return jsonify({'error': 'Polygon not found'}), 404
+    else:
+        return jsonify({'geojson': result[0]})
 
 if __name__ == "__main__":
     app.run(
