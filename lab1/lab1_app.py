@@ -20,21 +20,45 @@ def hello_world(): #function that app.route decorator references
   return response
 
 def hello():
-  return "GIS 5572 Lab 1_test"
+  return "GIS 5572 Lab 1"
 
 # Route to retrieve polygon as GeoJSON
-@app.route('/geojson', methods=['POST', 'GET'])
+@app.route('/getgeojson', methods=['GET'])
 def get_geojson():
-    # Execute a query to retrieve the polygon from the database
-    cursor = conn.cursor()
-    cursor.execute("SELECT ST_AsGeoJSON(polygon_lab1.*) FROM polygon_lab1;")
-    result = cursor.fetchall()
-    return result[0][0]
-    
-    if result is None:
-        return jsonify({'error': 'Polygon not found'}), 404
-    else:
-        return jsonify({'geojson': result[0]})
+    try:
+        # Connect to the database
+        connection = psycopg2.connect(**pgSQL_connect)
+        cursor = connection.cursor()
+
+        # Query to retrieve polygon as GeoJSON
+        query = "SELECT ST_AsGeoJSON(geom) FROM polygon_lab1;"
+        cursor.execute(query)
+        rows = cursor.fetchall()
+
+        # Close database connection
+        cursor.close()
+        connection.close()
+
+        # Prepare GeoJSON response
+        features = []
+        for row in rows:
+            feature = {
+                "type": "Feature",
+                "geometry": json.loads(row[0]),
+                "properties": {}
+            }
+            features.append(feature)
+
+        feature_collection = {
+            "type": "FeatureCollection",
+            "features": features
+        }
+
+        # Return GeoJSON response
+        return jsonify(feature_collection)
+
+    except psycopg2.Error as e:
+        return jsonify({"error": "Database error: " + str(e)}), 500
 
 if __name__ == "__main__":
     app.run(
