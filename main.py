@@ -31,7 +31,7 @@ def get_geojson():
         cursor = connection.cursor()
 
         # Query to retrieve polygon as GeoJSON
-        query = "SELECT ST_AsGeoJSON(geom) FROM polygon_lab1;"
+        query = "SELECT ST_AsGeoJSON(geometry) FROM polygon_lab1;"
         cursor.execute(query)
         rows = cursor.fetchall()
 
